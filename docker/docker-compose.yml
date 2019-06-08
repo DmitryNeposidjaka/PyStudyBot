@@ -1,0 +1,65 @@
+version: '3'
+
+networks:
+  frontend:
+    driver: ${NETWORKS_DRIVER}
+  backend:
+    driver: ${NETWORKS_DRIVER}
+
+volumes:
+  mongo:
+    driver: ${VOLUMES_DRIVER}
+
+services:
+
+### MongoDB ##############################################
+    mongo:
+      build: ./mongo
+      ports:
+      - "${MONGODB_PORT}:27017"
+      volumes:
+      - ${DATA_PATH_HOST}/mongo:/data/db
+      networks:
+      - backend
+
+### Workspace Utilities ##################################
+    workspace:
+      build:
+        context: ./python
+      volumes:
+        - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}
+      tty: true
+      networks:
+        - frontend
+        - backend
+      links:
+        - mongo
+
+### Docker-in-Docker ################################################
+    docker-in-docker:
+      image: docker:dind
+      privileged: true
+      volumes:
+        - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}
+      expose:
+        - 2375
+      networks:
+        - backend
+
+  ### MongoWebUI ################################################
+    mongo-webui:
+      build:
+        context: ./mongo-webui
+      restart: always
+      environment:
+      - ROOT_URL=${MONGO_WEBUI_ROOT_URL}
+      - MONGO_URL=${MONGO_WEBUI_MONGO_URL}
+      - INSTALL_MONGO=${MONGO_WEBUI_INSTALL_MONGO}
+      volumes:
+      - ${DATA_PATH_HOST}/mongo-webui:/data/db
+      ports:
+      - "${MONGO_WEBUI_PORT}:3000"
+      networks:
+      - backend
+      depends_on:
+      - mongo
