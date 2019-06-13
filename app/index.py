@@ -1,6 +1,7 @@
 import telebot
 import pymongo
 import json
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 
 task_by_chat = {}
 myclient = pymongo.MongoClient("mongodb://mongo:27017/")
@@ -21,7 +22,6 @@ class Task:
 
     def to_dict(self):
         return self.__dict__
-
 
 
 @bot.message_handler(commands=['start'])
@@ -96,7 +96,15 @@ def start_message(message):
 
 @bot.message_handler(func=lambda message: True)
 def echo_all(message):
-    bot.reply_to(message, message.text)
+    menu_board = ReplyKeyboardMarkup(resize_keyboard=True)
+    menu_board.row(
+        KeyboardButton(text='/start ▶️️'),
+        KeyboardButton(text='/users 👥️'),
+        KeyboardButton(text='/add ➕'),
+        KeyboardButton(text='/contacts ☎️'),
+        KeyboardButton(text='/help ❓️')
+    )
+    bot.send_message(message.chat.id, 'Try functions in menu!', reply_markup=menu_board)
 
 
 bot.polling()
