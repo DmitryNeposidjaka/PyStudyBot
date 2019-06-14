@@ -3,6 +3,6 @@
     "data": "The **master** admin @dajedarwin \nOr you can contact dmitryneposidjaka@gmail.com"
   },
   "help": {
-    "data": "You can /start using app with registering account \nTo see all registered /users just use it"
+    "data": "You can /start using app with registering account.\n If you want to take a test tap /test ,\nOr you can create task for tests using /add\n I you don`t like one of your tasks /delete it.\nTo see all registered /users just use it\nDON`T tap /timer!!!"
   }
 }

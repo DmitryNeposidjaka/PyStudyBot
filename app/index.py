@@ -1,16 +1,17 @@
 import telebot
 import pymongo
 import json
+import datetime
 from time import sleep
-
-
+from bson.objectid import ObjectId
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
+
 
 task_by_chat = {}
 myclient = pymongo.MongoClient("mongodb://mongo:27017/")
 
 mydb = myclient.study
-collection = mydb.users
+users = mydb.users
 tasks = mydb.tasks
 
 bot = telebot.TeleBot("771166532:AAEB_Sa7dQbk8XeNnmeCoWqkPebucqfmKXc")
@@ -22,6 +23,14 @@ class Task:
     content = ''
     comment = ''
     user_id = ''
+    approved = False
+    approved_by = ''
+    deleted = False
+
+    def __init__(self):
+        self.approved = False
+        self.approved_by = ''
+        self.deleted = False
 
     def to_dict(self):
         return self.__dict__
@@ -30,7 +39,8 @@ class Task:
 menu_board = ReplyKeyboardMarkup(resize_keyboard=True)
 menu_board.row(
     KeyboardButton(text='/start ▶️️'),
-    KeyboardButton(text='/add ➕')
+    KeyboardButton(text='/add ➕'),
+    KeyboardButton(text='/delete 🗑')
 ).row(
     KeyboardButton(text='/users 👥️'),
     KeyboardButton(text='/test 🧾')
@@ -40,12 +50,38 @@ menu_board.row(
     KeyboardButton(text='/help ❓️')
 )
 
+task_menu = ReplyKeyboardMarkup(resize_keyboard=True)
+task_menu.row('Stop ✋', 'Next 👉')
+
+approve_menu = ReplyKeyboardMarkup(resize_keyboard=True)
+approve_menu.row('Later 👋', 'Denied 👎', 'Approve 👍')
+
+
+def send_to_approve(chat_id, task):
+    message = bot.send_message(chat_id, '**{_id}**\n{content}'.format(**task), reply_markup=approve_menu, parse_mode='Markdown')
+    bot.register_next_step_handler(message, register_approved, task)
+
+
+def register_approved(message, task):
+    if message.text == 'Approve 👍':
+        tasks.update_one({'_id': ObjectId(task['_id'])}, {'$set': {'approved': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 'approved_by': message.from_user.id}})
+        bot.send_message(message.chat.id, 'Task {_id} was approved'.format(**task), reply_markup=menu_board)
+    elif message.text == 'Denied 👎':
+        bot.send_message(message.chat.id, 'Task {_id} was denied'.format(**task), reply_markup=menu_board)
+    elif message.text == 'Later 👋':
+        bot.send_message(message.chat.id, 'Lets work', reply_markup=menu_board)
+    else:
+        bot.send_message(message.chat.id, 'Try again')
+        send_to_approve(message.chat.id, task)
+
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     try:
         user = message.from_user.__dict__
-        x = collection.update({'id': user['id']}, user, upsert=True)
+        user['is_admin'] = False
+        user['chat_id'] = message.chat.id
+        x = users.update({'id': user['id']}, user, upsert=True)
         bot.reply_to(message, 'Your account has been saved!')
     except:
         bot.reply_to(message, 'We got problems, try later.')
@@ -56,7 +92,7 @@ def start_message(message):
     bot.reply_to(message,
                  '\n'.join(
                      map(
-                         lambda user: '{username} {last_name} {first_name}'.format(**user), collection.find()
+                         lambda user: '{username} {last_name} {first_name}'.format(**user), users.find()
                      )
                  )
                  )
@@ -100,10 +136,36 @@ def set_comment(message):
 
 
 def task_finish(message):
+    admins = users.find({"is_admin": True})
     task_by_chat[message.chat.id].comment = message.text
     task_by_chat[message.chat.id].user_id = message.from_user.id
-    tasks.insert(task_by_chat[message.chat.id].to_dict())
+    task = tasks.insert(task_by_chat[message.chat.id].to_dict())
     bot.send_message(message.chat.id, 'Your task was created', reply_markup=menu_board)
+    for admin in admins:
+        send_to_approve(admin['chat_id'], tasks.find_one({'_id': task}))
+
+
+@bot.message_handler(commands=['delete'])
+def start_message(message):
+    message = bot.send_message(message.chat.id, 'Send task id')
+    bot.register_next_step_handler(message, deleting_task)
+
+
+def deleting_task(message):
+    if message.text != 'exit':
+        try:
+            task = tasks.find_one({'_id': ObjectId(message.text)})
+            user = users.find_one({'id': message.from_user.id})
+            if task is not None and task['user_id'] == user['id'] or user['is_admin'] == True:
+                tasks.update_one({'_id': task['_id']},
+                                 {'$set': {'deleted': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}})
+                bot.reply_to(message, 'Task {_id} was deleted!'.format(**task), reply_markup=menu_board)
+            else:
+                bot.reply_to(message, 'You have no rights to delete!', reply_markup=menu_board)
+        except:
+            bot.reply_to(message, 'The id is invalid!', reply_markup=menu_board)
+    else:
+        bot.send_message(message.chat.id, 'Lets work', reply_markup=menu_board)
 
 
 @bot.message_handler(commands=['contacts'])
@@ -129,30 +191,39 @@ def choose_category(message):
 
 def start_testing(message, category):
     tasks_count_map = {'Short (5)': 5, 'Middle (15)': 5, 'Long (30)': 30}
+    categories_map = {
+        'Basic': 'Basic',
+        'OOP': 'OOP',
+        'Other': 'Other',
+        'All': {
+            "$in": ['OOP', 'Basic', 'Other']
+        }
+    }
     if message.text in tasks_count_map:
         count = tasks_count_map[message.text]
-        tasks_iterator = tasks.find({"category": category}).limit(count)
-        for task in tasks_iterator:
-            message = bot.send_message(message.chat.id, '{content}'.format(**task))
-
-        #process_task(message, tasks_iterator)
-        #bot.register_next_step_handler(message, process_task, tasks_iterator)
-
+        tasks_iterator = tasks.find({
+            "category": categories_map[category],
+            "deleted": False,
+            "approved": {"$ne": False}
+        }).limit(count)
+        message = bot.send_message(message.chat.id, '**{_id}**\n\n{content}'.format(**tasks_iterator.next()), reply_markup=task_menu)
+        bot.register_next_step_handler(message, process_task, tasks_iterator)
     else:
         bot.send_message(message.chat.id, 'Only MY variants, you asshole!', reply_markup=menu_board)
 
 
 def process_task(message, tasks_iterator):
-    task_menu = ReplyKeyboardMarkup(resize_keyboard=True)
-    task_menu.row('Stop ⏹', 'Next ▶️️')
-    if message.text is 'Next ▶️️':
-        try:
+    try:
+        if message.text == 'Next 👉':
+            message = bot.send_message(message.chat.id, '**{_id}**\n\n{content}'.format(**tasks_iterator.next()), reply_markup=task_menu)
+            bot.register_next_step_handler(message, process_task, tasks_iterator)
+        elif message.text == 'Stop ✋':
+            bot.send_message(message.chat.id, 'Come back later)', reply_markup=menu_board)
+        else:
             message = bot.send_message(message.chat.id, '{content}'.format(**tasks_iterator.next()), reply_markup=task_menu)
             bot.register_next_step_handler(message, process_task, tasks_iterator)
-        except:
-            bot.send_message(message.chat.id, 'Finish!', reply_markup=menu_board)
-    elif message.text is 'Stop ⏹':
-        bot.send_message(message.chat.id, 'Come back later)', reply_markup=menu_board)
+    except:
+        bot.send_message(message.chat.id, 'Finish!', reply_markup=menu_board)
 
 
 @bot.message_handler(commands=['tasks'])
@@ -160,7 +231,7 @@ def start_message(message):
     bot.reply_to(message,
                  '\n'.join(
                      map(
-                         lambda task: 'User: {user[0][first_name]} {user[0][last_name]}\n{content}'.format(**task), tasks.aggregate([{"$lookup": {"from": "users", "localField": "user_id", "foreignField": "id", "as": "user"}}])
+                         lambda task: 'Id: {_id}\nUser: {user[0][first_name]} {user[0][last_name]}\n{content}'.format(**task), tasks.aggregate([{"$lookup": {"from": "users", "localField": "user_id", "foreignField": "id", "as": "user"}}])
                      )
                  )
                  )
