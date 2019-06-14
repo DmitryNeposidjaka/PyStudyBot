@@ -139,10 +139,10 @@ def task_finish(message):
     admins = users.find({"is_admin": True})
     task_by_chat[message.chat.id].comment = message.text
     task_by_chat[message.chat.id].user_id = message.from_user.id
-    task = tasks.insert(task_by_chat[message.chat.id].to_dict())
+    task = tasks.insert_one(task_by_chat[message.chat.id].to_dict())
     bot.send_message(message.chat.id, 'Your task was created', reply_markup=menu_board)
     for admin in admins:
-        send_to_approve(admin['chat_id'], tasks.find_one({'_id': task}))
+        send_to_approve(admin['chat_id'], tasks.find_one({'_id': ObjectId(task)}))
 
 
 @bot.message_handler(commands=['delete'])
