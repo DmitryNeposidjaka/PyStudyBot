@@ -56,9 +56,15 @@ task_menu.row('Stop ✋', 'Next 👉')
 approve_menu = ReplyKeyboardMarkup(resize_keyboard=True)
 approve_menu.row('Later 👋', 'Denied 👎', 'Approve 👍')
 
+testing_categories = ReplyKeyboardMarkup(resize_keyboard=True)
+testing_categories.row('Basic', 'OOP', 'Other', 'All')
+
+tasks_count = ReplyKeyboardMarkup(resize_keyboard=True)
+tasks_count.row('Short (5)', 'Middle (15)', 'Long (30)')
+
 
 def send_to_approve(chat_id, task):
-    message = bot.send_message(chat_id, '**{_id}**\n{content}'.format(**task), reply_markup=approve_menu, parse_mode='Markdown')
+    message = bot.send_message(chat_id, '**{_id}**\n{content}'.format(**task), reply_markup=approve_menu)
     bot.register_next_step_handler(message, register_approved, task)
 
 
@@ -175,18 +181,19 @@ def start_message(message):
 
 @bot.message_handler(commands=['test'])
 def start_message(message):
-    testing_categories = ReplyKeyboardMarkup(resize_keyboard=True)
-    testing_categories.row('Basic', 'OOP', 'Other', 'All')
     message = bot.send_message(message.chat.id, 'Choose category to start testing 📝', reply_markup=testing_categories)
     bot.register_next_step_handler(message, choose_category)
 
 
 def choose_category(message):
+    categories_map = ['Basic', 'OOP', 'Other', 'All']
     category = message.text
-    tasks_count = ReplyKeyboardMarkup(resize_keyboard=True)
-    tasks_count.row('Short (5)', 'Middle (15)', 'Long (30)')
-    message = bot.send_message(message.chat.id, 'How match questions do you want?', reply_markup=tasks_count)
-    bot.register_next_step_handler(message, start_testing, category)
+    if category in categories_map:
+        message = bot.send_message(message.chat.id, 'How match questions do you want?', reply_markup=tasks_count)
+        bot.register_next_step_handler(message, start_testing, category)
+    else:
+        bot.send_message(message.chat.id, 'Only MY variants, you asshole!', reply_markup=testing_categories)
+        bot.register_next_step_handler(message, choose_category)
 
 
 def start_testing(message, category):
@@ -209,7 +216,8 @@ def start_testing(message, category):
         message = bot.send_message(message.chat.id, '**{_id}**\n\n{content}'.format(**tasks_iterator.next()), reply_markup=task_menu)
         bot.register_next_step_handler(message, process_task, tasks_iterator)
     else:
-        bot.send_message(message.chat.id, 'Only MY variants, you asshole!', reply_markup=menu_board)
+        bot.send_message(message.chat.id, 'Only MY variants, you asshole!', reply_markup=tasks_count)
+        bot.register_next_step_handler(message, start_testing, category)
 
 
 def process_task(message, tasks_iterator):
