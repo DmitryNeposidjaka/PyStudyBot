@@ -63,3 +63,16 @@ services:
       - backend
       depends_on:
       - mongo
+
+    ### App #######################################################
+    vue:
+      build:
+        context: ./python
+      volumes:
+        - ../vue/:/app
+      depends_on:
+        - mongo
+      environment:
+        NODE_ENV: development
+      ports:
+        - "${APP_PORT}:8080"

@@ -3,6 +3,7 @@ import pymongo
 import json
 import datetime
 from time import sleep
+from .Task import Task
 from bson.objectid import ObjectId
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 
@@ -17,25 +18,6 @@ tasks = mydb.tasks
 bot = telebot.TeleBot("771166532:AAEB_Sa7dQbk8XeNnmeCoWqkPebucqfmKXc")
 commands = dict(json.load(open('./config/commands.json')))
 
-
-class Task:
-    category = ''
-    content = ''
-    comment = ''
-    user_id = ''
-    approved = False
-    approved_by = ''
-    deleted = False
-
-    def __init__(self):
-        self.approved = False
-        self.approved_by = ''
-        self.deleted = False
-
-    def to_dict(self):
-        return self.__dict__
-
-
 menu_board = ReplyKeyboardMarkup(resize_keyboard=True)
 menu_board.row(
     KeyboardButton(text='/start ▶️️'),
@@ -49,6 +31,9 @@ menu_board.row(
     KeyboardButton(text='/contacts ☎️'),
     KeyboardButton(text='/help ❓️')
 )
+
+categories_board = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+categories_board.row('Basic', 'OOP', 'Other')
 
 task_menu = ReplyKeyboardMarkup(resize_keyboard=True)
 task_menu.row('Stop ✋', 'Next 👉')
@@ -84,11 +69,12 @@ def register_approved(message, task):
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     try:
+        admins = json.load(open('./config/admins.json'))
         user = message.from_user.__dict__
-        user['is_admin'] = False
+        user['is_admin'] = user['id'] in admins
         user['chat_id'] = message.chat.id
         x = users.update({'id': user['id']}, user, upsert=True)
-        bot.reply_to(message, 'Your account has been saved!')
+        bot.send_message(message, 'Your account has been saved!', reply_markup=menu_board)
     except:
         bot.reply_to(message, 'We got problems, try later.')
 
@@ -123,16 +109,18 @@ def start_message(message):
 @bot.message_handler(commands=['add'])
 def start_message(message):
     task_by_chat[message.chat.id] = Task()
-    categories_board = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
-    categories_board.row('Basic', 'OOP', 'Other')
     message = bot.reply_to(message, 'Choose category', reply_markup=categories_board)
     bot.register_next_step_handler(message, set_category)
 
 
 def set_category(message):
-    task_by_chat[message.chat.id].category = message.text
-    message = bot.reply_to(message, 'Set your task')
-    bot.register_next_step_handler(message, set_comment)
+    if message.text in ['Basic', 'OOP', 'Other']:
+        task_by_chat[message.chat.id].category = message.text
+        message = bot.reply_to(message, 'Set your task')
+        bot.register_next_step_handler(message, set_comment)
+    else:
+        message = bot.reply_to(message, 'Only our variants: Basic, OOP or Other!')
+        bot.register_next_step_handler(message, set_category)
 
 
 def set_comment(message):
