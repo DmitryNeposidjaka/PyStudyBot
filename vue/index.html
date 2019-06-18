@@ -4,8 +4,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
  </head>
 <body>
-<style>
-    @import './node_modules/mini.css/dist//mini-default.css'
+<style  type="text/css">
+    @import './node_modules/mini.css/dist//mini-default.css';
+
+    .member-card{
+        text-align: center;
+        margin: 40px 0px;
+    }
+    .member-card img{
+    }
+    .paragraph{
+        text-align:center;
+        margin: 100px 0px 20px 0px;
+        text-transform: uppercase;
+        color: #366c9b;
+    }
+    @media (max-width: 768px){
+        .member-card img{
+            max-width: 300px;
+        }
+    }
+
+    .member-content"{
+
+    }
 </style>
 <div class="container">
   <div class="row">
@@ -13,29 +35,83 @@
     </div>
   </div>
   <div class="row">
-    <div class="col-sm-0 col-md-3 col-lg-2">
+    <div class="col-sm-0 col-md-1 col-lg-2">
     </div>
-    <div class="col-sm-12 col-md-6 col-lg-8">
+    <div class="col-sm-12 col-md-10 col-lg-8">
+        <header style="margin-bottom: 100px">
+            <a href="/#what-is-it" class="logo" style="color: #366c9b"><span style="color:#efcb40">Py</span>StudyBot</a>
+            <a href="#what-is-it" class="button">About</a>
+            <a href="#get-started" class="button">Get started</a>
+            <span>|</span>
+            <a href="#team" role="button">Team</a>
+            <a href="#contact" role="button">Contact</a>
+        </header>
+        <div class="paragraph">
+            <h2 id="what-is-it">#What is it</h2>
+        </div>
         <div class="content">
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean ullamcorper ante vitae tellus ullamcorper, nec cursus mi congue. Fusce auctor quam elit, sit amet volutpat turpis scelerisque at. Nunc at ipsum mi. Pellentesque a augue quis nisl tempor auctor. Fusce sed leo eget nulla elementum semper. Nunc gravida mauris at tempus tempus. Vivamus in diam orci. Sed vel convallis quam.</p>
-            <p>Vivamus quis nisi placerat, egestas massa nec, pharetra tellus. Nullam facilisis viverra sem ut vehicula. Donec vitae elementum arcu, sit amet vestibulum ipsum. Proin eget massa metus. Duis consequat eros vel eros tempor sollicitudin. Morbi nunc turpis, pretium ac dolor vel, maximus imperdiet ipsum. Nunc blandit pellentesque aliquam. Nam egestas velit urna, a pulvinar nisl consectetur eget.</p>
-            <p>Curabitur ex enim, vulputate vel risus eu, consectetur convallis ex. Morbi dictum auctor orci. Maecenas vitae sagittis purus. Maecenas vitae tincidunt urna, a euismod sem. Integer quis eros ut felis consectetur tempus. Vestibulum sit amet risus non magna varius pretium ut ut tellus. Etiam massa augue, cursus a metus nec, congue iaculis turpis. Cras eu congue lectus, ut rhoncus quam. Donec neque nisi, tempor nec quam sit amet, rhoncus tempor enim. Morbi id ultricies nisi, at convallis mauris. Maecenas finibus semper sapien, at rutrum mi dictum nec. Curabitur eleifend mi ut finibus luctus. Quisque non mi sed nibh blandit vehicula feugiat sit amet nibh. Vivamus molestie dolor eu tempus dignissim. Cras laoreet lobortis nulla, vitae lobortis arcu.</p>
-            <p>Aliquam quis arcu ac turpis consequat viverra. Etiam ac sapien auctor est congue porttitor. Morbi a ex vel dolor volutpat tristique. Donec lorem urna, semper at aliquam nec, laoreet et mi. Pellentesque congue venenatis turpis, a imperdiet massa lacinia at. Nam hendrerit, arcu quis pulvinar iaculis, tortor orci scelerisque quam, tincidunt tincidunt neque turpis sit amet odio. Quisque porta quis quam non malesuada.</p>
+            <p>This bot will helps you to study python while practice on our test.</p>
         </div>
-        <div class="row">
-            <div class="col-fluid">
-                <img src="./assets/images/cat.jpg" class="circular">
+        <div class="paragraph">
+            <h2 id="get-started">#Get started</h2>
+        </div>
+        <div class="content">
+            <p>At first open <a href="https://t.me/PyStudyBot">bot</a> and <a href="">/start</a> using it, we will register you and then you can start testing.</p>
+            <p>If you just want check your knowledge in python you need to select <a href="">/test</a>. Then you need to select category of tasks, now we have only four, but you always can ask to add more just <a href="#contact">contact</a> me.
+                And the last one is select tasks count. So there are your tasks you can use <a href="">/stop</a> or <a href="">/next</a>, you know what it is.
+            </p>
+            <p>If you don`t like our tasks, or you want to share your experience, just <a href="">/add</a> one more. At first you need to set task content (we support only text) for example:</br> <strong>What it will prints? </strong></br><code>print([[], [], []] * 3)</code></br>
+                Then you can write comment, or solution of your task. That`s all finish!)</br>
+                Yor task will needs approving by our admins, to check status or to see your tasks use <a href="">/tasks</a>.
+            </p>
+
+            <p>Don`t use <a href="">/timer</a>, please.</p>
+        </div>
+        <div class="paragraph">
+            <h2 id="team">#Our team</h2>
+        </div>
+        <div class="row" style="margin: 20px 0px">
+            <div class="col-sm-12 col-md-4 col-lg-4">
+                <div class="member-card">
+                    <img src="./assets/images/selfie-sq.jpg" class="circular" width="200px" height="200px">
+                    <div class="member-content">
+                        <h3>Dmitriy</h3>
+                        <p>Founder, developer.</p>
+                    </div>
+                </div>
             </div>
-            <div class="col-fluid">
-                <img src="./assets/images/cat 2.jpg" class="circular">
+            <div class="col-sm-12 col-md-4 col-lg-4">
+                <div class="member-card">
+                    <img src="./assets/images/photo_2019-05-07_15-54-06-sq.jpg" class="circular" width="200px" height="200px">
+                    <div class="member-content">
+                        <h3>Denis</h3>
+                        <p>The QA Engineer.</p>
+                    </div>
+                </div>
             </div>
-            <div class="col-fluid">
-                <img src="./assets/images/cat3.jpg" class="circular">
+            <div class="col-sm-12 col-md-4 col-lg-4">
+                <div class="member-card">
+                    <img src="./assets/images/photo_2019-06-12_10-39-21-sq.jpg" class="circular" width="200px" height="200px">
+                    <div class="member-content">
+                        <h3>The smart kitten</h3>
+                        <p>She is just a smart kitten.</p>
+                    </div>
+                </div>
             </div>
         </div>
+        <div class="paragraph">
+            <h2 id="contact">#Contacts</h2>
         </div>
+
+        <div class="content">
+            <p>You can find me in telegram: <a href="https://t.me/dajedarwin">https://t.me/dajedarwin</a> </p>
+            <p>Or send me email with title <strong>PyStudyBot</strong>: <a href="mailto:dmitryneposidjaka@gmail.com">dmitryneposidjaka@gmail.com</a> </p>
+        </div>
+    <footer style="margin-top: 100px">
+      <p>&copy; 2016-2019 Dmitriy`s creative | <a href="#get-started">Start</a> | <a href="#team">Team</a></p>
+    </footer>
     </div>
-    <div class="col-sm-0 col-md-3 col-lg-2">
+    <div class="col-sm-0 col-md-1 col-lg-2">
     </div>
   </div>
   <div class="row">

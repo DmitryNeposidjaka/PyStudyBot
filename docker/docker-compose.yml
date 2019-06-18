@@ -66,13 +66,15 @@ services:
 
     ### App #######################################################
     vue:
-      build:
-        context: ./python
-      volumes:
-        - ../vue/:/app
+      image: node:8
+      networks:
+        - backend
       depends_on:
         - mongo
-      environment:
-        NODE_ENV: development
+      volumes:
+        - ../vue/:/var/www
       ports:
         - "${APP_PORT}:8080"
+      tty: true
+      working_dir: /var/www
+      command: bash -c "npm i && npm run serve"

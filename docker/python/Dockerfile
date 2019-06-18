@@ -1,13 +1,16 @@
-FROM python:3
+FROM python:3-alpine
 
-apt-get install supervisor
-cp supervisor/py_study_bot.conf /etc/supervisor/py_study_bot.conf
+RUN apk add supervisor
+#RUN apt-get update
+#RUN apt-get install supervisor
+
+COPY supervisor/py_study_bot.conf /etc/supervisor/py_study_bot.conf
 
 WORKDIR /var/www
 
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-/etc/init.d/supervisor start
+RUN supervisorctl start
 
-# CMD [ "python", "./index.py" ]
+CMD [ "python", "./index.py" ]
