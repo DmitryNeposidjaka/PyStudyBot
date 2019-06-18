@@ -3,7 +3,7 @@ import pymongo
 import json
 import datetime
 from time import sleep
-from .Task import Task
+from Task import Task
 from bson.objectid import ObjectId
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 
@@ -18,6 +18,8 @@ tasks = mydb.tasks
 bot = telebot.TeleBot("771166532:AAEB_Sa7dQbk8XeNnmeCoWqkPebucqfmKXc")
 commands = dict(json.load(open('./config/commands.json')))
 
+admins_list = json.load(open('./config/admins.json'))
+
 menu_board = ReplyKeyboardMarkup(resize_keyboard=True)
 menu_board.row(
     KeyboardButton(text='/start ▶️️'),
@@ -25,7 +27,8 @@ menu_board.row(
     KeyboardButton(text='/delete 🗑')
 ).row(
     KeyboardButton(text='/users 👥️'),
-    KeyboardButton(text='/test 🧾')
+    KeyboardButton(text='/test 🧾'),
+    KeyboardButton(text='/tasks 🔖')
 ).row(
     KeyboardButton(text='/timer ⏱️'),
     KeyboardButton(text='/contacts ☎️'),
@@ -69,12 +72,12 @@ def register_approved(message, task):
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     try:
-        admins = json.load(open('./config/admins.json'))
         user = message.from_user.__dict__
-        user['is_admin'] = user['id'] in admins
+        user['is_admin'] = user['id'] in admins_list
+
         user['chat_id'] = message.chat.id
         x = users.update({'id': user['id']}, user, upsert=True)
-        bot.send_message(message, 'Your account has been saved!', reply_markup=menu_board)
+        bot.send_message(message.chat.id, 'Your account has been saved!', reply_markup=menu_board)
     except:
         bot.reply_to(message, 'We got problems, try later.')
 
@@ -92,7 +95,7 @@ def start_message(message):
 
 @bot.message_handler(commands=['help'])
 def start_message(message):
-    bot.reply_to(message, commands['help']['data'])
+    bot.send_message(message, commands['help']['data'])
 
 
 @bot.message_handler(commands=['timer'])
@@ -224,13 +227,20 @@ def process_task(message, tasks_iterator):
 
 @bot.message_handler(commands=['tasks'])
 def start_message(message):
-    bot.reply_to(message,
+    if message.from_user.id in admins_list:
+        template = 'Id: {_id}\nUser: {user[0][first_name]} {user[0][last_name]}\n{content}'
+        tasks_list = tasks.aggregate(
+            [{"$lookup": {"from": "users", "localField": "user_id", "foreignField": "id", "as": "user"}}])
+    else:
+        template = 'Id: {_id}\n{content}\n\n{comment}'
+        tasks_list = tasks.find({"user_id": message.from_user.id})
+
+    bot.send_message(message.chat.id,
                  '\n'.join(
                      map(
-                         lambda task: 'Id: {_id}\nUser: {user[0][first_name]} {user[0][last_name]}\n{content}'.format(**task), tasks.aggregate([{"$lookup": {"from": "users", "localField": "user_id", "foreignField": "id", "as": "user"}}])
+                         lambda task: template.format(**task), tasks_list
                      )
-                 )
-                 )
+                 ), reply_markup=menu_board)
 
 
 @bot.message_handler(func=lambda message: True)
