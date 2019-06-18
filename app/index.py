@@ -95,7 +95,7 @@ def start_message(message):
 
 @bot.message_handler(commands=['help'])
 def start_message(message):
-    bot.send_message(message, commands['help']['data'])
+    bot.reply_to(message, commands['help']['data'])
 
 
 @bot.message_handler(commands=['timer'])
