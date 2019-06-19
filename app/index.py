@@ -136,7 +136,7 @@ def task_finish(message):
     admins = users.find({"is_admin": True})
     task_by_chat[message.chat.id].comment = message.text
     task_by_chat[message.chat.id].user_id = message.from_user.id
-    task = tasks.insert_one(task_by_chat[message.chat.id].to_dict())
+    task = tasks.insert(task_by_chat[message.chat.id].to_dict())
     bot.send_message(message.chat.id, 'Your task was created', reply_markup=menu_board)
     for admin in admins:
         send_to_approve(admin['chat_id'], tasks.find_one({'_id': ObjectId(task)}))
@@ -199,11 +199,14 @@ def start_testing(message, category):
     }
     if message.text in tasks_count_map:
         count = tasks_count_map[message.text]
-        tasks_iterator = tasks.find({
-            "category": categories_map[category],
-            "deleted": False,
-            "approved": {"$ne": False}
-        }).limit(count)
+        tasks_iterator = tasks.aggregate([
+            {'$match': {
+                "category": categories_map[category],
+                "deleted": False,
+                "approved": {"$ne": False}
+            }},
+            {"$sample": {"size": count}}
+        ])
         message = bot.send_message(message.chat.id, '**{_id}**\n\n{content}'.format(**tasks_iterator.next()), reply_markup=task_menu)
         bot.register_next_step_handler(message, process_task, tasks_iterator)
     else:
