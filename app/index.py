@@ -1,6 +1,7 @@
 import telebot
 import pymongo
 import json
+import copy
 import datetime
 from time import sleep
 from Task import Task
@@ -207,25 +208,35 @@ def start_testing(message, category):
             }},
             {"$sample": {"size": count}}
         ])
-        message = bot.send_message(message.chat.id, '**{_id}**\n\n{content}'.format(**tasks_iterator.next()), reply_markup=task_menu)
-        bot.register_next_step_handler(message, process_task, tasks_iterator)
+        task = tasks_iterator.next()
+        tasks_list = list()
+        tasks_list.append(task)
+        message = bot.send_message(message.chat.id, '**{_id}**\n\n{content}'.format(**task), reply_markup=task_menu)
+        bot.register_next_step_handler(message, process_task, tasks_iterator, tasks_list)
     else:
         bot.send_message(message.chat.id, 'Only MY variants, you asshole!', reply_markup=tasks_count)
         bot.register_next_step_handler(message, start_testing, category)
 
 
-def process_task(message, tasks_iterator):
+def process_task(message, tasks_iterator, tasks_list):
     try:
+        task = tasks_iterator.next()
+        tasks_list.append(task)
         if message.text == 'Next 👉':
-            message = bot.send_message(message.chat.id, '**{_id}**\n\n{content}'.format(**tasks_iterator.next()), reply_markup=task_menu)
-            bot.register_next_step_handler(message, process_task, tasks_iterator)
+            message = bot.send_message(message.chat.id, '**{_id}**\n\n{content}'.format(**task), reply_markup=task_menu)
+            bot.register_next_step_handler(message, process_task, tasks_iterator, tasks_list)
         elif message.text == 'Stop ✋':
             bot.send_message(message.chat.id, 'Come back later)', reply_markup=menu_board)
         else:
-            message = bot.send_message(message.chat.id, '{content}'.format(**tasks_iterator.next()), reply_markup=task_menu)
-            bot.register_next_step_handler(message, process_task, tasks_iterator)
+            message = bot.send_message(message.chat.id, '{content}'.format(**task), reply_markup=task_menu)
+            bot.register_next_step_handler(message, process_task, tasks_iterator, tasks_list)
     except:
-        bot.send_message(message.chat.id, 'Finish!', reply_markup=menu_board)
+        comments = '\n'.join(
+                     map(
+                         lambda task: '**{_id}**\n\n{comment}\n'.format(**task), tasks_list
+                     )
+                 )
+        bot.send_message(message.chat.id, 'Finish!\n\n' + comments, reply_markup=menu_board)
 
 
 @bot.message_handler(commands=['tasks'])
